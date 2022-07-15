@@ -1,0 +1,592 @@
+---
+title: "Introduction to Statistical Methods for Data Science"
+author: "Arjun Jayan"
+date: '2022-06-20'
+output: word_document
+editor_options: 
+  markdown: 
+    wrap: 72
+---
+
+importing common packages
+
+```{r}
+library(ggplot2)
+library(tidyverse)
+library(dplyr)
+```
+
+importing data and time series packages
+
+```{r}
+library(lubridate)
+library(tseries)
+library(car)
+```
+
+Setting working environment directory
+
+```{r}
+setwd("/Users/arjun/Downloads/Arjun_Course")
+```
+
+Task 1: Preliminary data analysis
+
+Importing input signal,output signal and time data
+
+```{r}
+input<-read.csv("X.csv")
+output<-read.csv("y.csv")
+times<-read.csv("time.csv")
+```
+
+combining output signal and input signal
+
+```{r}
+meg<-cbind(output,input)
+```
+Converting data to time series with interval of 10 sec
+
+```{r}
+meg1<-ts(meg,end = 20,frequency = 10,start = 0.1)
+head(meg1)
+```
+
+Converting time series data to data frame structure Selecting column
+y,x2,x1
+
+##Time Series Time series plotting for x2=0 (neutral audio)
+
+```{r}
+tsmeg<-as.data.frame(meg1)%>%filter(x2=='0')%>%ts(start = 0.1,end=10,frequency = 10)%>%
+  plot(type='b',col='blue',main='time series plot of input and output signal x2=0')
+```
+
+Time series plotting for x2=1 (Emotional audio)
+
+```{r}
+tsmeg1<-as.data.frame(meg1)%>%filter(x2=='1')%>%ts(start = 10,end = 20,frequency = 10)%>%
+  plot(type='b',col='Red',main='time series plot of input and output signal x2=1')
+```
+
+Distribution of input signal and output signal
+
+Filtering the values for x2==0,neutral audio
+
+```{r}
+megdist<-as.data.frame(meg1)%>%
+filter(x2=='0')%>% 
+select(x1,y) #selecting column x1,y
+```
+
+Filtering the values for x2==1,emotional audio
+
+```{r}
+megdist1<-as.data.frame(meg1)%>%
+  filter(x2=='1')%>% 
+  select(x1,y) #selecting column x1,y
+```
+
+##Histogram
+
+Histogram of output signal
+
+```{r}
+hist(meg$y,xlab = 'output',main ='histogram of output_signal',col = 'purple' )
+```
+
+Histogram of Output signal when x2=0
+
+```{r}
+hist(megdist$y,xlab = 'output',main ='histogram of output_signal(x2=0)',col = 'Yellow' )
+```
+
+Histogram of Input signal when x2=0
+
+```{r}
+hist(megdist$x1,xlab = 'input',main='histogram of input_signal(x2=0)',col ='Red')
+```
+
+Histogram of Output signal when x2=1
+
+```{r}
+hist(megdist1$y,xlab = 'output',main ='histogram of output_signal(x2=1)',col = 'orange' )
+```
+
+Histogram of Input signal when x2=1
+
+```{r}
+hist(megdist1$x1,xlab = 'input',main='histogram of input_signal(x2=1)',col ='blue')
+```
+
+Correlation when x2=0
+
+```{r}
+megcor<-cor(megdist)
+corrplot::corrplot.mixed(megcor,upper = "pie",lower = "number")
+```
+
+Correlation when x2=1
+
+```{r}
+megcor1<-cor(megdist1)
+corrplot::corrplot.mixed(megcor1,upper = "pie",lower = "number")
+```
+#Scatter Plot 
+
+Scatter Plot when x2=0
+
+```{r}
+megdist%>%plot(type='p',main="Scatter plot of input and output signal when x2=0",col='Red',xlab='Input Signal',ylab='Output Signal')
+```
+
+Scatter Plot when x2=1
+
+```{r}
+megdist1%>%plot(type='p',main="Scatter plot of input and output signal when x2=1",col='Orange',xlab='Input Signal',ylab='Output Signal')
+```
+
+##Box Plot Box plot when x2=0
+
+```{r}
+boxplot(megdist$y,main='Boxplot of output signal when x2=0',col='Red',ylab='Output Signal')
+```
+
+Box plot when x2=1
+
+```{r}
+boxplot(megdist1$y,main='Boxplot of output signal when x2=1',col='Orange',ylab='Output Signal')
+```
+
+##Task 2 Regression 
+Task 2.1
+
+```{r}
+regrndata<-as.data.frame(meg)
+```
+
+Input values of x1
+
+```{r}
+input_1=regrndata$x1
+input_2=regrndata$x1^2
+input_3=regrndata$x1^3
+input_4=regrndata$x1^4
+input_5=regrndata$x1^5
+```
+
+Input values of x2
+
+```{r}
+x2=regrndata$x2
+```
+
+Output value
+
+```{r}
+y<-output
+y<-as.matrix(y)
+```
+
+Model 1
+
+```{r}
+meg_model1<-data.frame(input0=c(1),input_3,input_5,x2) ## Creating Data frame for Model 1
+meg_mod1<-as.matrix(meg_model1)
+head(meg_mod1)
+meg_md1<-solve(t(meg_mod1)%*%meg_mod1)%*%t(meg_mod1)%*%y ##Estimating theta Parameter using least squares method
+meg_md1
+```
+
+Model 2
+
+```{r}
+meg_model2<-data.frame(input0=c(1),input_1,x2) ##Creating Data frame for Model 2
+meg_mod2<-as.matrix(meg_model2)
+head(meg_mod2)
+meg_md2<-solve(t(meg_mod2)%*%meg_mod2)%*%t(meg_mod2)%*%y ##Estimating theta Parameter using least squares method
+meg_md2
+```
+
+Model 3
+
+```{r}
+meg_model3<-data.frame(input0=c(1),input_1,input_2,input_4,x2) ##Creating Data frame for Model 3
+meg_mod3<-as.matrix(meg_model3)
+head(meg_mod3)
+meg_md3<-solve(t(meg_mod3)%*%meg_mod3)%*%t(meg_mod3)%*%y ##Estimating theta Parameter using least squares method
+meg_md3
+
+```
+
+Model 4
+
+```{r}
+meg_model4<-data.frame(input0=c(1),input_1,input_2,input_3,input_5,x2) ##Creating Data frame for Model 4
+meg_mod4<-as.matrix(meg_model4)
+head(meg_mod4)
+meg_md4<-solve(t(meg_mod4)%*%meg_mod4)%*%t(meg_mod4)%*%y ##Estimating theta Parameter using least squares method
+meg_md4
+```
+
+Model 5
+
+```{r}
+meg_model5<-data.frame(input0=c(1),input_1,input_3,input_4,x2) ##Creating Data frame for Model 5
+meg_mod5<-as.matrix(meg_model5)
+head(meg_mod5)
+meg_md5<-solve(t(meg_mod5)%*%meg_mod5)%*%t(meg_mod5)%*%y ##Estimating theta Parameter using least squares method
+meg_md5
+```
+
+##Task 2.2 RSS
+Model 1 meg_RSS
+```{r}
+meg_rss1<-norm((y-(meg_mod1%*%meg_md1))^2)
+meg_rss1
+```
+Model 2 meg_RSS
+```{r}
+meg_rss2<-norm((y-(meg_mod2%*%meg_md2))^2)
+meg_rss2
+```
+Model 3 meg_RSS
+```{r}
+meg_rss3<-norm((y-(meg_mod3%*%meg_md3))^2)
+meg_rss3
+```
+Model 4 meg_RSS
+```{r}
+meg_rss4<-norm((y-(meg_mod4%*%meg_md4))^2)
+meg_rss4
+```
+Model 5 meg_RSS
+```{r}
+meg_rss5<-norm((y-(meg_mod5%*%meg_md5))^2)
+meg_rss5
+```
+
+##Task2.3 Likelihood function
+
+log likelihood 1
+```{r}
+meg_logfxn1<- -(nrow(y)/2*log(2*pi))-(nrow(y)/2*(log(meg_rss1/(nrow(y)-1))))-meg_rss1*(1/(2*(meg_rss1/(nrow(y)-1))))
+meg_logfxn1  
+```
+log likelihood 2
+```{r}
+meg_logfxn2<- -(nrow(y)/2*log(2*pi))-(nrow(y)/2*(log(meg_rss2/(nrow(y)-1))))-meg_rss2*(1/(2*(meg_rss2/(nrow(y)-1))))
+meg_logfxn2
+```
+log likelihood 3
+```{r}
+meg_logfxn3<- -(nrow(y)/2*log(2*pi))-(nrow(y)/2*(log(meg_rss3/(nrow(y)-1))))-meg_rss3*(1/(2*(meg_rss3/(nrow(y)-1))))
+meg_logfxn3
+```
+log likelihood 4
+```{r}
+meg_logfxn4<- -(nrow(y)/2*log(2*pi))-(nrow(y)/2*(log(meg_rss4/(nrow(y)-1))))-meg_rss4*(1/(2*(meg_rss4/(nrow(y)-1))))
+meg_logfxn4
+```
+log likelihood 5
+```{r}
+meg_logfxn5<- -(nrow(y)/2*log(2*pi))-(nrow(y)/2*(log(meg_rss5/(nrow(y)-1))))-meg_rss5*(1/(2*(meg_rss5/(nrow(y)-1))))
+meg_logfxn5
+```
+
+#TASK 2.4 AIC AND BIC
+K=no:of parameters estimated
+
+Model 1 AIC & BIC
+```{r}
+length(meg_md1)
+```
+```{r}
+k1=4
+meg_AIC1<-2*k1-(2*meg_logfxn1)
+meg_AIC1
+meg_BIC1<-k1*log(nrow(y))-(2*(meg_logfxn1))
+meg_BIC1
+
+```
+Model 2 AIC & BIC
+```{r}
+length(meg_md2)
+```
+```{r}
+k2=3
+meg_AIC2<-2*k2-(2*meg_logfxn2)
+meg_AIC2
+meg_BIC2<-k2*log(nrow(y))-(2*(meg_logfxn2))
+meg_BIC2
+```
+Model 3 AIC & BIC
+```{r}
+length(meg_md3)
+```
+```{r}
+k2=5
+meg_AIC3<-2*k2-(2*meg_logfxn3)
+meg_AIC3
+meg_BIC3<-k2*log(nrow(y))-(2*(meg_logfxn3))
+meg_BIC3
+```
+Model 4 AIC & BIC
+```{r}
+length(meg_md4)
+```
+```{r}
+k2=6
+meg_AIC4<-2*k2-(2*meg_logfxn4)
+meg_AIC4
+meg_BIC4<-k2*log(nrow(y))-(2*(meg_logfxn4))
+meg_BIC4
+```
+Model 5 AIC & BIC
+```{r}
+length(meg_md5)
+```
+```{r}
+k2=5
+meg_AIC5<-2*k2-(2*meg_logfxn5)
+meg_AIC5
+meg_BIC5<-k2*log(nrow(y))-(2*(meg_logfxn5))
+meg_BIC5
+```
+
+##TASK 2.5 Check the distribution of each model prediction errors
+Plot the errors and check if they are normally distributed
+
+Model 1 residual distribution
+```{r}
+meg_err1=(y-(meg_mod1%*%meg_md1))#error
+head(meg_err1)
+```
+Model one Output error signal distribution
+```{r}
+qqnorm(meg_err1,main ="Model one Output error signal distribution")#error plot
+qqline(meg_err1,col="Orange")
+```
+Model one output  signals distribution
+```{r}
+qqnorm(meg_md1,main = "Model one output signals distribution")
+qqline(meg_md1,col="Red")
+```
+Model 2 residual distribution
+```{r}
+meg_err2=(y-(meg_mod2%*%meg_md2))#error
+head(meg_err2)
+```
+Model Two Output error signal distribution
+```{r}
+qqnorm(meg_err2,main ="Model Two Output error signal distribution")#error plot
+qqline(meg_err2,col="Orange")
+```
+Model Two output  signals distribution
+```{r}
+qqnorm(meg_md2,main = "Model Two output signals distribution")
+qqline(meg_md2,col="Red")
+```
+Model 3 residual distribution
+```{r}
+meg_err3=(y-(meg_mod3%*%meg_md3))#error
+head(meg_err3)
+```
+Model Three Output error signal distribution
+```{r}
+qqnorm(meg_err3,main ="Model Three Output error signal distribution")#error plot
+qqline(meg_err3,col="Orange")
+```
+Model Three output signals distribution
+```{r}
+qqnorm(meg_md3,main = "Model Three output signals distribution")
+qqline(meg_md3,col="Red")
+```
+Model 4 residual distribution
+```{r}
+meg_err4=(y-(meg_mod4%*%meg_md4))#error
+head(meg_err4)
+```
+Model Four Output error signal distribution
+```{r}
+qqnorm(meg_err4,main ="Model Four Output error signal distribution")#error plot
+qqline(meg_err4,col="Orange")
+```
+Model Four output signals distribution
+```{r}
+qqnorm(meg_md4,main = "Model Four output signals distribution")
+qqline(meg_md4,col="Red")
+```
+Model 5 residual distribution
+```{r}
+meg_err5=(y-(meg_mod5%*%meg_md5))#error
+head(meg_err5)
+
+```
+Model Five Output error signal distribution
+```{r}
+qqnorm(meg_err5,main ="Model Five Output error signal distribution")#error plot
+qqline(meg_err5,col="Orange")
+```
+Model Five output signals distribution
+```{r}
+qqnorm(meg_md5,main = "Model Five output signals distribution")
+qqline(meg_md5,col="Red")
+```
+
+#TASK 2.6 Select the best regression model according to AIC and BIC 
+
+The best regression model is model 3, reason: it has the smallest values of AIC(997.9368)
+and BIC(1014.428) comparing of all the 5 regression models.
+
+#Task 2.7
+Splitting the data for training and testing
+
+```{r}
+set.seed(123)
+tradata<-sample(1:200,140) #Taking sample of 140 rows
+head(tradata)
+```
+Training Data
+```{r}
+training_data<-regrndata[tradata,]
+head(training_data)
+```
+Testing Data
+```{r}
+testing_data<-regrndata[-tradata,]
+head(testing_data)
+```
+Estimating Model parameter
+Model 3
+Training Input Signal
+```{r}
+meg_model03<-data.frame(input0=c(1),training_data$x1,training_data$x1^2,training_data$x1^4,training_data$x2)
+meg_mod03<- as.matrix(meg_model03)
+head(meg_mod03)
+```
+Training Output Signal
+```{r}
+y1<-training_data$y
+y1<-as.matrix(y1)
+meg_md03<-solve(t(meg_mod03)%*%meg_mod03)%*%t(meg_mod03)%*%y1
+meg_md03
+```
+Prediction of Testing Data
+```{r}
+meg_est<-sum(meg_md03)/length(y1)
+meg_est
+```
+```{r}
+pred<-meg_est*testing_data
+head(pred)
+```
+95% Confidence Interval of Output signal
+```{r}
+sd<-sqrt(var(pred$y))
+sd
+means<-mean(pred$y)
+means
+paste('Confidence Interval',means-1.96*sd/sqrt(nrow(testing_data)),means+1.96*sd/sqrt(nrow(testing_data)))
+```
+95% Confidence Interval of Input signal
+```{r}
+sd1<-sqrt(var(pred$x1))
+sd1
+means1<-mean(pred$x1)
+means1
+paste('Confidence Interval',means1-1.96*sd1/sqrt(nrow(testing_data)),means1+1.96*sd1/sqrt(nrow(testing_data)))
+```
+Error 
+```{r}
+meg_error<-testing_data$y-pred$y
+head(meg_error)
+meg_error1<-testing_data$y+pred$y
+head(meg_error1)
+```
+Adding Confidence limits to predict the data
+```{r}
+pred_Lower<-meg_error
+pred_Upper<-meg_error1
+pred_testy<-testing_data$y
+```
+Plotting Confidence intervals and error bars
+```{r}
+pred %>% ggplot(aes(x1,y))+geom_errorbar(ymin=pred_Lower,ymax=pred_Upper)+ geom_point(aes(x1),col='Red') +geom_point(aes(x1,pred_testy),col='Yellow')+ggtitle('Confidence Error Bar Plot')+theme(plot.title = element_text(hjust = 0.5))+xlab('Input Data Set') + ylab('Output Data Set')
+```
+#Task 3 APPROXIMATE BAYESIAN COMPUTATION (ABC)
+#1 2 parameters with largest  absolute least squares estimation
+```{r}
+meg_mean1<-colSums(abs(meg_mod1))/nrow(meg_mod1)
+head(meg_mean1)
+meg_mean2<-colSums(abs(meg_mod2))/nrow(meg_mod2)
+head(meg_mean2)
+meg_mean3<-colSums(abs(meg_mod3))/nrow(meg_mod3)
+head(meg_mean3)
+meg_mean4<-colSums(abs(meg_mod4))/nrow(meg_mod4)
+head(meg_mean4)
+meg_mean5<-colSums(abs(meg_mod5))/nrow(meg_mod5)
+head(meg_mean5)
+```
+#model 1 has the largest absolute least squares estimate Input 3 & Input 5
+```{r}
+model1<-as.data.frame(meg_mod1)
+head(model1)
+```
+prior for parameters Input 3 and input 5
+```{r}
+p1<-runif(min = min(model1$input_3),max=max(model1$input_3),nrow(model1))
+head(p1)
+p2<-runif(min = min(model1$input_5),max=max(model1$input_5),nrow(model1))
+head(p2)
+```
+Sample Value
+```{r}
+n=50
+```
+Importing for ABC Rejection
+```{r}
+library(EasyABC)
+```
+Plot Joint Distribution of parameters
+```{r}
+sample_model <-function(x)
+  {
+  c(x[3]^3+p1,x[5]^5+p2)
+  }
+prior <- list(c('unif',0,1))
+```
+ABC rejection with tolerance of 0.2   
+```{r}
+simulation <- ABC_rejection(model = sample_model,prior = prior,nb_simul = n,tol = 0.2)
+densityPlot(simulation$param,xlab = 'stimulated Parameters',main = 'joint distribution of 2 parameters input 3 & input 5',col = 'Orange')
+```
+plot marginal distribution of Input 3 parameter
+```{r}
+sample_model1<-function(x)
+  {
+  x[3]^3+p1
+}
+prior1 <- list(c('unif',0,1))
+```
+ABC rejection  with tolerance of 0.2
+```{r}
+simulation1<-ABC_rejection(model = sample_model1,prior = prior1,nb_simul = n,tol = 0.2)
+densityPlot(simulation1$param,xlab = 'stimulated Parameters',main = 'joint distribution of input 3',col = 'Violet')
+```
+plot marginal distribution of Input 5 parameter
+```{r}
+sample_model2<-function(x)
+  {
+  x[5]^5+p2
+}
+prior2 <- list(c('unif',0,1))
+```
+ABC rejection  with tolerance of 0.2
+```{r}
+simulation2<-ABC_rejection(model = sample_model2,prior = prior2,nb_simul = n,tol = 0.2)
+densityPlot(simulation2$param,xlab = 'stimulated Parameters',main = 'joint distribution of input 5',col = 'Red')
+```
+#Result
+The density curves seems to normal distributed for both the marginal and joint distribution of the 2 posterior parameters.
+
